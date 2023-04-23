@@ -1,44 +1,71 @@
+# AWS Provider Configuration
 provider "aws" {
-  region = var.region
+  region = "us-west-2"  # Replace with your desired region
 }
 
-resource "aws_vpc" "main" {
-  name = "my-vpc"
-}
-
-resource "aws_subnet" "public" {
-  vpc_id = aws_vpc.main.id
+# Create VPC
+resource "aws_vpc" "example_vpc" {
   cidr_block = "10.0.0.0/16"
-  availability_zone = var.availability_zone
 }
 
-resource "aws_security_group" "tomcat" {
-  name = "tomcat-security-group"
-  description = "Security group for Tomcat instances"
+# Create Internet Gateway
+resource "aws_internet_gateway" "example_igw" {
+  vpc_id = aws_vpc.example_vpc.id
+}
+
+# # Attach Internet Gateway to VPC
+# resource "aws_vpc_attachment" "example_attachment" {
+#   vpc_id             = aws_vpc.example_vpc.id
+#   internet_gateway_id = aws_internet_gateway.example_igw.id
+# }
+
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.example_vpc.id
+}
+
+# Create Subnet
+resource "aws_subnet" "example_subnet" {
+  vpc_id     = aws_vpc.example_vpc.id
+  cidr_block = "10.0.1.0/24"
+  depends_on = [aws_internet_gateway.gw]
+}
+
+# Create Security Group
+resource "aws_security_group" "example_sg" {
+  name_prefix = "example_sg_"
+  vpc_id      = aws_vpc.example_vpc.id
 
   ingress {
-    protocol = "tcp"
-    port = 8080
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-resource "aws_ec2_instance" "tomcat" {
-  ami = var.ami_id
-  instance_type = var.instance_type
-  subnet_id = aws_subnet.public.id
-  security_groups = [aws_security_group.tomcat.id]
+# Create EC2 Instance
+resource "aws_instance" "example_instance" {
+  ami           = "ami-0c55b159cbfafe1f0"  # Replace with your desired AMI
+  instance_type = "t2.micro"
+  key_name      = "example_key"  # Replace with your desired key pair name
+  subnet_id     = aws_subnet.example_subnet.id
+  vpc_security_group_ids = [aws_security_group.example_sg.id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum install -y tomcat
+              sudo systemctl start tomcat
+              sudo systemctl enable tomcat
+              EOF
 
   tags = {
-    Name = "Tomcat"
-  }
-
-  provisioner "file" {
-    sources = ["./tomcat.war"]
-    destination = "/opt/tomcat/webapps/ROOT.war"
-  }
-
-  provisioner "remote-exec" {
-    inline = ["sudo service tomcat restart"]
+    Name = "example_instance"
   }
 }
