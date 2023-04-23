@@ -9,16 +9,6 @@ resource "aws_vpc" "example_vpc" {
 }
 
 # Create Internet Gateway
-resource "aws_internet_gateway" "example_igw" {
-  vpc_id = aws_vpc.example_vpc.id
-}
-
-# # Attach Internet Gateway to VPC
-# resource "aws_vpc_attachment" "example_attachment" {
-#   vpc_id             = aws_vpc.example_vpc.id
-#   internet_gateway_id = aws_internet_gateway.example_igw.id
-# }
-
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.example_vpc.id
 }
@@ -34,6 +24,7 @@ resource "aws_subnet" "example_subnet" {
 resource "aws_security_group" "example_sg" {
   name_prefix = "example_sg_"
   vpc_id      = aws_vpc.example_vpc.id
+  depends_on = [aws_internet_gateway.gw]
 
   ingress {
     from_port   = 22
@@ -52,11 +43,11 @@ resource "aws_security_group" "example_sg" {
 
 # Create EC2 Instance
 resource "aws_instance" "example_instance" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Replace with your desired AMI
+  ami           = "ami-009c5f630e96948cb"  # Replace with your desired AMI
   instance_type = "t2.micro"
-  key_name      = "example_key"  # Replace with your desired key pair name
   subnet_id     = aws_subnet.example_subnet.id
   vpc_security_group_ids = [aws_security_group.example_sg.id]
+  depends_on = [aws_internet_gateway.gw]
 
   user_data = <<-EOF
               #!/bin/bash
