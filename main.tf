@@ -43,15 +43,26 @@ resource "aws_security_group" "example_sg" {
 
 # Create EC2 Instance
 resource "aws_instance" "example_instance" {
-  ami           = "ami-009c5f630e96948cb"
+  ami           = "ami-02d5619017b3e5162"
   instance_type = "t2.micro"
+  key_name      = "tomcat-test"
+  associate_public_ip_address = true
   subnet_id     = aws_subnet.example_subnet.id
   vpc_security_group_ids = [aws_security_group.example_sg.id]
   depends_on = [aws_internet_gateway.gw]
 
   user_data = <<-EOF
               #!/bin/bash
-              sudo yum install -y tomcat
+              sudo yum -y update
+              sudo amazon-linux-extras install java-openjdk11
+              sudo groupadd --system tomcat
+              sudo useradd -d /usr/share/tomcat -r -s /bin/false -g tomcat tomcat
+              wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.63/bin/apache-tomcat-9.0.63.tar.gz
+              sudo tar xvf apache-tomcat-9.0.63.tar.gz -C /usr/share/
+              sudo ln -s /usr/share/apache-tomcat-$VER/ /usr/share/tomcat
+              sudo chown -R tomcat:tomcat /usr/share/tomcat
+              sudo chown -R tomcat:tomcat /usr/share/apache-tomcat-9.0.63/
+              sudo systemctl daemon-reload
               sudo systemctl start tomcat
               sudo systemctl enable tomcat
               EOF
