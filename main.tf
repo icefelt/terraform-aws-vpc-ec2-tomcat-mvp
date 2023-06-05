@@ -32,7 +32,6 @@ resource "aws_security_group" "example_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   ingress {
     from_port   = 80
     to_port     = 80
@@ -43,7 +42,7 @@ resource "aws_security_group" "example_sg" {
 
 # Create EC2 Instance
 resource "aws_instance" "example_instance" {
-  ami           = "ami-02d5619017b3e5162"
+  ami           = "ami-04f798ca92cc13f74"
   instance_type = "t2.micro"
   key_name      = "tomcat-test"
   associate_public_ip_address = true
