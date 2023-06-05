@@ -65,9 +65,40 @@ resource "aws_instance" "example_instance" {
 
   user_data = <<-EOF
               #!/bin/bash
-              sudo yum -y update            
-              sudo yum install httpd -y
-              sudo systemctl start httpd.service
+              sudo yum update -y update
+              sudo yum install httpd firewalld mariadb-server mariadb php php-mysql -y
+              sudo systemctl start httpd
+              sudo systemctl enable httpd
+              sudo systemctl status httpd
+              
+              # sudo yum install firewalld -y
+              sudo systemctl unmask firewalld
+              sudo systemctl enable firewalld
+              sudo systemctl start firewalld
+
+              sudo firewall-cmd --add-service=http
+              sudo firewall-cmd --add-service=https
+              sudo systemctl restart firewalld
+
+              sudo firewall-cmd --zone=public --add-port=80/tcp --permanent
+              sudo firewall-cmd --reload
+
+              # sudo yum install mariadb-server mariadb -y
+              sudo systemctl start mariadb
+              
+              sudo mysql_secure_installation -y
+              
+              sudo systemctl status mariadb
+              # sudo yum install php php-mysql
+              sudo systemctl restart httpd
+
+              sudo yum install nano -y
+              sudo nano /var/www/html/info.php
+              ```php
+              <?php
+              phpinfo ();
+              ?>
+              ```
               EOF
 
   tags = {
