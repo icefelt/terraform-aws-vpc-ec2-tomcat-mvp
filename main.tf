@@ -38,6 +38,19 @@ resource "aws_security_group" "example_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
 }
 
 # Create EC2 Instance
@@ -52,18 +65,9 @@ resource "aws_instance" "example_instance" {
 
   user_data = <<-EOF
               #!/bin/bash
-              sudo yum -y update
-              sudo amazon-linux-extras install java-openjdk11
-              sudo groupadd --system tomcat
-              sudo useradd -d /usr/share/tomcat -r -s /bin/false -g tomcat tomcat
-              wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.63/bin/apache-tomcat-9.0.63.tar.gz
-              sudo tar xvf apache-tomcat-9.0.63.tar.gz -C /usr/share/
-              sudo ln -s /usr/share/apache-tomcat-$VER/ /usr/share/tomcat
-              sudo chown -R tomcat:tomcat /usr/share/tomcat
-              sudo chown -R tomcat:tomcat /usr/share/apache-tomcat-9.0.63/
-              sudo systemctl daemon-reload
-              sudo systemctl start tomcat
-              sudo systemctl enable tomcat
+              sudo yum -y update            
+              sudo yum install httpd -y
+              sudo systemctl start httpd.service
               EOF
 
   tags = {
